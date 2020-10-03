@@ -20,6 +20,8 @@ def parseInput(conn, args):
         delete(conn, rec_data)
     elif protocol == "close":
         close(conn)
+    elif protocol == "put":
+        put(conn, rec_data)
     else:
         error(conn, protocol)
 
@@ -56,6 +58,11 @@ def delete(conn, item):
         conn.send(("ANSWER - " + item_str).encode() + " has been deleted")
     except:
         conn.send(("Unable to find " + item_str + " in DELETE dictionary").encode())
+
+def put(conn, item):
+    items_str = ' '.join(item)
+    try:
+            
 #@method - handleconn - takes in server socket and address as parameters
 #@description - runs loop which takes in connections and allows them to run async
 def handleconn(conn, addr):
