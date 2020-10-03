@@ -19,13 +19,11 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             - DELETE - delete something from the server
             - PUT - update something from the server
             - OPTIONS - ???
-            - EXIT - quit the program
+            - CLOSE - quit the program
         --------------------------------
         """)
     while(True):
         data = input('Enter your command:  ')
-        if data == "EXIT":
-            exit()
         s.send(data.encode())
         print(s.recv(8192).decode())
 

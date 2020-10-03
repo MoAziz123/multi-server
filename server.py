@@ -2,10 +2,14 @@ import socket
 import sys
 import select
 import asyncio
+import _thread
+
 items = {"get":{"chocolate":"chocolate is a beautiful substance", "poison":"poision is a type of harmful substance made from nightshade"},
          "post":{"postystuff":"postystuff is really fun", "chicken":"chicken is a great meat"},
          "delete":{"ghost":"a dead thing", "ultraboss":"a scary entity"}}
-async def parseInput(conn, args):
+#@method - parseInput - takes input from client
+#@description - takes each input and parses based on first word - standardized via .lower()
+def parseInput(conn, args):
     protocol = args[0].lower()
     rec_data = args[1:len(args)]
     if protocol == "get":
@@ -14,10 +18,17 @@ async def parseInput(conn, args):
         post(conn, rec_data)
     elif protocol == "delete":
         delete(conn, rec_data)
+    elif protocol == "close":
+        close(conn)
     else:
         error(conn, protocol)
 
-
+def close(conn):
+    conn.send("Socket has been closed".encode())
+    print("Socket has been closed")
+    conn.close()
+    if ConnectionAbortedError:
+        pass
 def error(conn, item):
     item_str = item.upper() + " is not a valid function of the server"
     conn.send(item_str.encode())
@@ -45,16 +56,17 @@ def delete(conn, item):
         conn.send(("ANSWER - " + item_str).encode() + " has been deleted")
     except:
         conn.send(("Unable to find " + item_str + " in DELETE dictionary").encode())
-#for server, it's conn
-async def handleconn(conn, addr):
+#@method - handleconn - takes in server socket and address as parameters
+#@description - runs loop which takes in connections and allows them to run async
+def handleconn(conn, addr):
  while True:
         if ConnectionAbortedError:
                 pass
         print("Connected to,", addr)
-        data = conn.recv(8192) #hits max byte limit
-        await loop.create_task(parseInput(conn, data.decode().split(" ")))
+        data = conn.recv(8192) 
+        parseInput(conn, data.decode().split(" "))
         
-async def mainLoop():
+def mainLoop():
     host, port = "127.0.0.1", 80
     print("Listening on", host, port)
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -62,11 +74,10 @@ async def mainLoop():
     server.listen(10)
     while True:
         conn, addr = server.accept()
-        await handleconn(conn, addr)
+        _thread.start_new_thread(handleconn, (conn, addr))
+    server.close()
    
 
 
 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(mainLoop())
-loop.close()
+mainLoop()
