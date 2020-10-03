@@ -9,53 +9,61 @@ async def parseInput(conn, args):
     protocol = args[0].lower()
     rec_data = args[1:len(args)]
     if protocol == "get":
-        await get(conn, rec_data)
+        get(conn, rec_data)
     elif protocol == "post":
-        await post(conn, rec_data)
+        post(conn, rec_data)
     elif protocol == "delete":
-        await delete(conn, rec_data)
+        delete(conn, rec_data)
     else:
-        await error(conn, protocol)
+        error(conn, protocol)
 
 
-async def error(conn, item):
-    item_str = ' '.join(item) + "is not a valid function of the server"
-    await conn.send(item_str.encode())
-async def get(conn, item):
+def error(conn, item):
+    item_str = item.upper() + " is not a valid function of the server"
+    conn.send(item_str.encode())
+def get(conn, item):
     item_str = ' '.join(item)
     try:
-        await conn.send(("ANSWER " + items["get"][item_str]).encode())
+        encoded_item = ("ANSWER " + items["get"][item_str]).encode()
+        conn.send(encoded_item)
     except:
-        await conn.send(("Unable to find " + item_str + " in GET dictionary").encode())
-async def post(conn, item):
+        conn.send(("Unable to find " + item_str + " in GET dictionary").encode())
+def post(conn, item):
     item_str = ' '.join(item)
     try:
-       await conn.send(("ANSWER " + items["post"][item_str]).encode())
+       encoded_item = ("ANSWER " + items["post"][item_str]).encode()
+       conn.send(encoded_item)
     except:
-        await conn.send(("Unable to find " + item_str + " in POST dictionary").encode())
+        conn.send(("Unable to find " + item_str + " in POST dictionary").encode())
 
-async def delete(conn, item):
-    item_str = ' '.join(item)
+def delete(conn, item):
+    item_str = ' '.join(item)#
     try:
-        await conn.send(("ANSWER " + items["delete"][item_str]).encode())
+        for key, value in items:
+            if items[key][value] == item:
+                del items[key][value]
+        conn.send(("ANSWER - " + item_str).encode() + " has been deleted")
     except:
-        await conn.send(("Unable to find " + item_str + " in DELETE dictionary").encode())
+        conn.send(("Unable to find " + item_str + " in DELETE dictionary").encode())
 #for server, it's conn
+async def handleconn(conn, addr):
+ while True:
+        if ConnectionAbortedError:
+                pass
+        print("Connected to,", addr)
+        data = conn.recv(8192) #hits max byte limit
+        await loop.create_task(parseInput(conn, data.decode().split(" ")))
+        
 async def mainLoop():
     host, port = "127.0.0.1", 80
     print("Listening on", host, port)
-    functions = ["get", "post", "delete"]
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind((host, port))
-    s.listen(10)
-    conn, address = s.accept()
-    with conn:
-        while True:
-            print("Connected to,", address)
-            data = conn.recv(8192) #hits max byte limit
-            await parseInput(conn, data.decode().split(" "))
-            if ConnectionAbortedError:
-                pass
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind((host,port))
+    server.listen(10)
+    while True:
+        conn, addr = server.accept()
+        await handleconn(conn, addr)
+   
 
 
 
