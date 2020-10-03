@@ -53,15 +53,14 @@ def delete(conn, item):
     item_str = ' '.join(item)#
     try:
         for key, value in items:
-            if items[key][value] == item:
-                del items[key][value]
+            print(key, value)
         conn.send(("ANSWER - " + item_str).encode() + " has been deleted")
     except:
         conn.send(("Unable to find " + item_str + " in DELETE dictionary").encode())
 
 def put(conn, item):
     items_str = ' '.join(item)
-    try:
+            
             
 #@method - handleconn - takes in server socket and address as parameters
 #@description - runs loop which takes in connections and allows them to run async
