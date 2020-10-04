@@ -23,9 +23,13 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         --------------------------------
         """)
     while(True):
-        data = input('Enter your command:  ')
-        s.send(data.encode())
+        data = input('Enter your command:  ') + "\r\n"
+        headers = input("Enter your headers: ") + "\r\n"
+        print(data, headers)
+        s.send((data + headers).encode())
         print(s.recv(8192).decode())
+        if s.recv(8192).decode() == "Socket has been closed":
+            exit()
 
 
 

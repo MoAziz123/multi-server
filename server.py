@@ -9,21 +9,33 @@ items = {"get":{"chocolate":"chocolate is a beautiful substance", "poison":"pois
          "delete":{"ghost":"a dead thing", "ultraboss":"a scary entity"}}
 #@method - parseInput - takes input from client
 #@description - takes each input and parses based on first word - standardized via .lower()
-def parseInput(conn, args):
-    protocol = args[0].lower()
-    rec_data = args[1:len(args)]
-    if protocol == "get":
-        get(conn, rec_data)
-    elif protocol == "post":
-        post(conn, rec_data)
-    elif protocol == "delete":
-        delete(conn, rec_data)
-    elif protocol == "close":
-        close(conn)
-    elif protocol == "put":
-        put(conn, rec_data)
+def parseInput(conn, lines):
+    request = lines[0] #main line
+    headers = lines[1] #headers
+    if(len(lines)>3):
+        conn.send("Maximum number of lines exceeded, should be 2 lines".encode())
     else:
-        error(conn, protocol)
+        request = request.split(" ")
+        method = request[0].lower()
+        resource = request[1]
+        version = parseVersion(conn, request[2])
+        headers = parseHeaders(conn, headers)
+        print(method, resource, version, headers)
+
+    #if method == "get":
+    #   get(conn, resource)
+    #elif method == "post":
+    #    post(conn, resource)
+    #elif method == "delete":
+    #    delete(conn, resource)
+    #elif method == "close":
+    #    close(conn)
+    #elif method == "put":
+    #    put(conn, resource)
+    #elif method == "head":
+    #    head(conn, resource)
+    #else:
+    #    error(conn, method)
 
 def close(conn):
     conn.send("Socket has been closed".encode())
@@ -34,6 +46,7 @@ def close(conn):
 def error(conn, item):
     item_str = item.upper() + " is not a valid function of the server"
     conn.send(item_str.encode())
+
 def get(conn, item):
     item_str = ' '.join(item)
     try:
@@ -59,9 +72,30 @@ def delete(conn, item):
         conn.send(("Unable to find " + item_str + " in DELETE dictionary").encode())
 
 def put(conn, item):
+    #put distinction between file and var
     items_str = ' '.join(item)
-            
-            
+
+def head(conn, item):
+    print("head")
+
+def parseVersion(conn,version):
+    if("HTTP/" not in version):
+        conn.send("Please include the HTTP/ prefix to the version.")
+    return version
+
+def parseHeaders(conn, headers):
+    headers_dict = {}
+    headers = headers.split(":")
+    for i in range(0, len(headers)):
+        if i % 2 == 0:
+            headers_dict.update({headers[i]:headers[i+1]})
+        break
+    return headers_dict
+
+
+    
+
+
 #@method - handleconn - takes in server socket and address as parameters
 #@description - runs loop which takes in connections and allows them to run async
 def handleconn(conn, addr):
@@ -69,8 +103,13 @@ def handleconn(conn, addr):
         if ConnectionAbortedError:
                 pass
         print("Connected to,", addr)
-        data = conn.recv(8192) 
-        parseInput(conn, data.decode().split(" "))
+        data = conn.recv(8192)
+        lines = data.decode().split("\r\n")
+        print(lines)
+        try:
+            parseInput(conn, lines)
+        except socket.error as e :
+            conn.send("ERROR - " + str(e))
         
 def mainLoop():
     host, port = "127.0.0.1", 80
