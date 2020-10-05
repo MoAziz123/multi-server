@@ -1,12 +1,13 @@
 import sys
 import socket
 import select
+import yaml
 
-#for clients it's s
 
-host = '127.0.0.1'
-port = 80
-
+with open('./www/config.yaml') as f:
+    data = yaml.load(f, Loader=yaml.FullLoader)
+    host = data['host']
+    port = data['port']
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.connect((host, port))
     print("Connected to", host, port)
