@@ -8,7 +8,7 @@ import yaml
 items = {"get":{"chocolate":"chocolate is a beautiful substance", "poison":"poision is a type of harmful substance made from nightshade"},
          "post":{"postystuff":"postystuff is really fun", "chicken":"chicken is a great meat"},
          "delete":{"ghost":"a dead thing", "ultraboss":"a scary entity"}}
-with open('./www/config.yaml') as f:
+with open('./config.yaml') as f:
     data = yaml.load(f, Loader=yaml.FullLoader)
     web_dir = data['dir']
     host = data['host']
@@ -88,11 +88,11 @@ def head(conn, item):
 def parseResource(conn, resource, version):
     #error codes for 200, 400, 404
     try:
-        f = open("./www" + resource)
+        f = open(web_dir + resource)
         conn.send((version + " 200 OK").encode())
         return resource
     except IOError:
-        conn.send(version + " 404 - FILE NOT FOUND")
+        conn.send((version + " 404 - FILE NOT FOUND").encode())
         return resource, None
 
     

@@ -4,7 +4,7 @@ import select
 import yaml
 
 
-with open('./www/config.yaml') as f:
+with open('./config.yaml') as f:
     data = yaml.load(f, Loader=yaml.FullLoader)
     host = data['host']
     port = data['port']
