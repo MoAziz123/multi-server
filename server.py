@@ -3,10 +3,16 @@ import sys
 import select
 import asyncio
 import _thread
+import yaml
 
 items = {"get":{"chocolate":"chocolate is a beautiful substance", "poison":"poision is a type of harmful substance made from nightshade"},
          "post":{"postystuff":"postystuff is really fun", "chicken":"chicken is a great meat"},
          "delete":{"ghost":"a dead thing", "ultraboss":"a scary entity"}}
+with open('./www/config.yaml') as f:
+    data = yaml.load(f, Loader=yaml.FullLoader)
+    web_dir = data['dir']
+    host = data['host']
+    port = data['port']
 #@method - parseInput - takes input from client
 #@description - takes each input and parses based on first word - standardized via .lower()
 def parseInput(conn, lines):
@@ -17,43 +23,43 @@ def parseInput(conn, lines):
     else:
         request = request.split(" ")
         method = request[0].lower()
-        resource = request[1]
         version = parseVersion(conn, request[2])
+        resource= parseResource(conn,request[1], version)
         headers = parseHeaders(conn, headers)
         print(method, resource, version, headers)
 
-    #if method == "get":
-    #   get(conn, resource)
-    #elif method == "post":
-    #    post(conn, resource)
-    #elif method == "delete":
-    #    delete(conn, resource)
-    #elif method == "close":
-    #    close(conn)
-    #elif method == "put":
-    #    put(conn, resource)
-    #elif method == "head":
-    #    head(conn, resource)
-    #else:
-    #    error(conn, method)
+    if method == "get":
+       get(conn, resource)
+    elif method == "post":
+        post(conn, resource)
+    elif method == "delete":
+        delete(conn, resource)
+    elif method == "close":
+        close(conn)
+    elif method == "put":
+        put(conn, resource)
+    elif method == "head":
+        head(conn, resource)
+    else:
+        error(conn, method)
+    conn.send("/*end of data*/".encode())
 
 def close(conn):
     conn.send("Socket has been closed".encode())
-    print("Socket has been closed")
+    print("Socket "+ conn + " has been closed")
     conn.close()
     if ConnectionAbortedError:
         pass
 def error(conn, item):
-    item_str = item.upper() + " is not a valid function of the server"
+    item_str = "HTTP/1.0 400 Bad Request"
     conn.send(item_str.encode())
 
 def get(conn, item):
-    item_str = ' '.join(item)
     try:
-        encoded_item = ("ANSWER " + items["get"][item_str]).encode()
-        conn.send(encoded_item)
+        f = open(web_dir + item)
+        conn.send(" ".join(f.readlines()).encode())
     except:
-        conn.send(("Unable to find " + item_str + " in GET dictionary").encode())
+        error(conn, "GET")
 def post(conn, item):
     item_str = ' '.join(item)
     try:
@@ -74,9 +80,22 @@ def delete(conn, item):
 def put(conn, item):
     #put distinction between file and var
     items_str = ' '.join(item)
+    print(items_str)
 
 def head(conn, item):
     print("head")
+
+def parseResource(conn, resource, version):
+    #error codes for 200, 400, 404
+    try:
+        f = open("./www" + resource)
+        conn.send((version + " 200 OK").encode())
+        return resource
+    except IOError:
+        conn.send(version + " 404 - FILE NOT FOUND")
+        return resource, None
+
+    
 
 def parseVersion(conn,version):
     if("HTTP/" not in version):
@@ -84,12 +103,16 @@ def parseVersion(conn,version):
     return version
 
 def parseHeaders(conn, headers):
+    if len(headers)  < 1:
+        return ""
     headers_dict = {}
     headers = headers.split(":")
     for i in range(0, len(headers)):
         if i % 2 == 0:
             headers_dict.update({headers[i]:headers[i+1]})
         break
+    for key, value in headers_dict.items():
+        conn.send((key + ": " + value).encode())
     return headers_dict
 
 
@@ -112,7 +135,6 @@ def handleconn(conn, addr):
             conn.send("ERROR - " + str(e))
         
 def mainLoop():
-    host, port = "127.0.0.1", 80
     print("Listening on", host, port)
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.bind((host,port))

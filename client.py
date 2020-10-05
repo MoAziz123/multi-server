@@ -22,14 +22,16 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             - CLOSE - quit the program
         --------------------------------
         """)
-    while(True):
+    while True:
         data = input('Enter your command:  ') + "\r\n"
         headers = input("Enter your headers: ") + "\r\n"
-        print(data, headers)
-        s.send((data + headers).encode())
-        print(s.recv(8192).decode())
-        if s.recv(8192).decode() == "Socket has been closed":
-            exit()
+        s.send((data+headers).encode())
+        while True: #gets all data until done
+            item = s.recv(8192).decode()
+            if(item == "/*end of data*/"):
+                break
+            print(item)
+            
 
 
 

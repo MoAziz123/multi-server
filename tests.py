@@ -17,16 +17,16 @@ def test_post():
             s.send("GET chocolate".encode())
             assert(s.recv(8192).decode() == "ANSWER chocolate is a beautiful substance")
     except:
-        print("GET test passed")
+        print("GET test failed")
 
 def test_delete():
-try:
+    try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.connect((host,port))
             s.send("DELETE chocolate".encode())
             assert(s.recv(8192).decode() == "ANSWER chocolate is a beautiful substance")
     except:
-        print("DELETE test passed")
+        print("DELETE test failed")
 
 def test_close():
     
@@ -36,8 +36,13 @@ try:
             s.send("CLOSE".encode())
             assert(s.recv(8192).decode() == "Socket has been closed")
     except:
-        print("CLOSE test passed")
+        print("CLOSE test failed")
 
 
 
 def test_conn():
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            assert(s.connect((host,port)) == True)
+    except:
+        print("Connection test failed")
