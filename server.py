@@ -39,8 +39,6 @@ def parseInput(conn, lines):
         close(conn)
     elif method == "put":
         put(conn, resource, version)
-    elif method == "head":
-        head(conn, resource)
     else:
         error(conn, method)
     conn.send("/*end of data*/".encode())
