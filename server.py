@@ -4,6 +4,7 @@ import select
 import asyncio
 import _thread
 import yaml
+import os
 
 items = {"get":{"chocolate":"chocolate is a beautiful substance", "poison":"poision is a type of harmful substance made from nightshade"},
          "post":{"postystuff":"postystuff is really fun", "chicken":"chicken is a great meat"},
@@ -37,7 +38,7 @@ def parseInput(conn, lines):
     elif method == "close":
         close(conn)
     elif method == "put":
-        put(conn, resource)
+        put(conn, resource, version)
     elif method == "head":
         head(conn, resource)
     else:
@@ -57,7 +58,10 @@ def error(conn, item):
 def get(conn, item):
     try:
         f = open(web_dir + item)
-        conn.send(" ".join(f.readlines()).encode())
+        if f:
+            conn.send(" ".join(f.readlines()).encode())
+        else:
+            conn.send((item + "does not exist").encode())
     except:
         error(conn, "GET")
 def post(conn, item):
@@ -69,21 +73,20 @@ def post(conn, item):
         conn.send(("Unable to find " + item_str + " in POST dictionary").encode())
 
 def delete(conn, item):
-    item_str = ' '.join(item)#
     try:
-        for key, value in items:
-            print(key, value)
-        conn.send(("ANSWER - " + item_str).encode() + " has been deleted")
+        os.remove(item)
+        conn.send(item + "has been deleted".encode())
     except:
-        conn.send(("Unable to find " + item_str + " in DELETE dictionary").encode())
+        conn.send("DELETE operation failed".encode())
+def put(conn, item, version):
+    try:
+        f = open(web_dir + item)
+        f.write("")
+        conn.send(version + "201 Created")
+    except:
+        conn.send("PUT operation failed".encode())            
+            
 
-def put(conn, item):
-    #put distinction between file and var
-    items_str = ' '.join(item)
-    print(items_str)
-
-def head(conn, item):
-    print("head")
 
 def parseResource(conn, resource, version):
     #error codes for 200, 400, 404
